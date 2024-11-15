@@ -1,3 +1,7 @@
+uv.lock 
+pyproject.toml
+*pyc
+.python-version
 # Logs
 logs
 *.log
