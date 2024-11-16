@@ -26,20 +26,20 @@ def find_closest_wines(vector, top_n=5):
         top_n (int): Number of closest wines to return.
 
     Returns:
-        list: A list of dictionaries containing the wine ID and similarity score.
+        list: A list of dictionaries containing the wine ID, wine name, and similarity score.
     """
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        # Fetch all wine IDs and their combined vectors
-        cursor.execute("SELECT wine_id, combined_vector FROM combined_embeddings;")
+        # Fetch all wine IDs, names, and their combined vectors
+        cursor.execute("SELECT wine_id, name, combined_vector FROM combined_embeddings JOIN wines2 ON combined_embeddings.wine_id = wines2.id;")
         wines = cursor.fetchall()
 
         # Calculate similarity for each wine
         similarities = []
-        for wine_id, wine_vector in wines:
+        for wine_id, wine_name, wine_vector in wines:
             similarity = 1 - cosine(vector, wine_vector)  # Cosine similarity (higher is closer)
-            similarities.append({"wine_id": wine_id, "similarity": similarity})
+            similarities.append({"wine_id": wine_id, "wine_name": wine_name, "similarity": similarity})
 
         # Sort by similarity in descending order and get the top N
         closest_wines = sorted(similarities, key=lambda x: x["similarity"], reverse=True)[:top_n]

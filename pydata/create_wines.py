@@ -1,7 +1,8 @@
 """
-This script generates synthetic data for wines, including their attributes such as type, region, variety, 
-year, price, top notes, and bottom notes.There are no spaces in the syn data (i.e., no 'Napa Vally' just 'Napa' ).
-It drops the PostgreSQL database table 'wines2' if it exists and then creates a new one. 
+This script generates synthetic data for wines, including their attributes such as type, region, variety,
+year, price, top notes, and bottom notes. Wine names are generated to sound more realistic and reflect a
+combination of region, variety, and descriptive elements.
+It drops the PostgreSQL database table 'wines2' if it exists and then creates a new one.
 The script inserts the generated data into the table and ensures no duplicate entries.
 """
 
@@ -24,6 +25,14 @@ regions = {
 }
 varieties = ['cabernet', 'sauvignon', 'pinot', 'chardonnay', 'merlot', 'blanc', 'syrah', 'malbec', 'zinfandel', 'riesling']
 
+# Helper function to generate wine names
+def generate_wine_name(region, variety, descriptor):
+    """
+    Generate a wine name using the region, variety, and a descriptor.
+    Example: "Napa Bold Cabernet" or "Tuscany Smooth Syrah".
+    """
+    return f"{region.capitalize()} {descriptor.capitalize()} {variety.capitalize()}"
+
 N = 100
 wines = []
 for i in range(N):
@@ -31,9 +40,11 @@ for i in range(N):
     region = random.choice(list(regions.keys()))
     variety = random.choice(varieties)
     topnote, bottomnote = random.sample(regions[region], 2)
+    descriptor = random.choice([topnote, bottomnote])
+    wine_name = generate_wine_name(region, variety, descriptor)
     wine = {
         "ID": i + 1,
-        "Name": f"Wine {i + 1} ({variety})",
+        "Name": wine_name,
         "Type": wine_type,
         "Variety": variety,
         "Year": random.randint(1980, 2023),
@@ -50,11 +61,12 @@ try:
     conn = psycopg2.connect(**db_config)
     cursor = conn.cursor()
     
-    cursor.execute("DROP TABLE IF EXISTS wines2;")
+    cursor.execute("DROP TABLE IF EXISTS wines2 CASCADE;")
     
     create_table_query = """
     CREATE TABLE wines2 (
         id INT PRIMARY KEY,
+        name VARCHAR(100),
         type VARCHAR(50),
         variety VARCHAR(50),
         year INT,
@@ -68,12 +80,12 @@ try:
     
     for index, row in df_wines.iterrows():
         query = """
-        INSERT INTO wines2 (id, type, variety, year, region, price, topnote, bottomnote)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO wines2 (id, name, type, variety, year, region, price, topnote, bottomnote)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (id) DO NOTHING;
         """
         values = (
-            row['ID'], row['Type'], row['Variety'], row['Year'],
+            row['ID'], row['Name'], row['Type'], row['Variety'], row['Year'],
             row['Region'], row['Price'], row['Topnote'], row['Bottomnote']
         )
         cursor.execute(query, values)
