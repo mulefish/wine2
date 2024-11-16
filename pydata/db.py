@@ -63,3 +63,35 @@ def get_unique_wines_data():
         cursor.close()
         conn.close()
     return result
+
+def calculate_vector_from_json(data):
+    """
+    Calculate a combined vector based on values from the provided JSON.
+    
+    Args:
+        data (dict): A JSON object with terms as values (keys are irrelevant).
+        
+    Returns:
+        list: A combined vector (sum of vectors for the given values) or None if no vectors are found.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        combined_vector = None
+        
+        for value in data.values():
+            if value:
+                # Query the vector for the current value
+                cursor.execute("SELECT vector FROM token_embeddings WHERE token = %s", (value.lower(),))
+                result = cursor.fetchone()
+                if result:
+                    vector = result[0]
+                    if combined_vector is None:
+                        combined_vector = vector
+                    else:
+                        combined_vector = [x + y for x, y in zip(combined_vector, vector)]
+        
+        return combined_vector
+    finally:
+        cursor.close()
+        conn.close()

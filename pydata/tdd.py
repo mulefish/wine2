@@ -1,6 +1,6 @@
 import psycopg2
 from db_config import db_config
-
+from db import calculate_vector_from_json
 
 def wines2_getAllUniqueTerms_and_check_embeddings():
     # The unique number of dimensions in the wines2 table ought to match the number of embedded words in token_embeddings. 
@@ -54,5 +54,33 @@ def wines2_getAllUniqueTerms_and_check_embeddings():
         if 'connection' in locals():
             connection.close()
 
+def calculate_vector_from_json_test():
+    json1 = {
+        "key_does_not_matter": "herbaceous"
+    }
+    json2 = {
+        "key_does_not_matter": "cabernet"
+    }
+
+    a = calculate_vector_from_json(json1)
+    b = calculate_vector_from_json(json2)
+    c = calculate_vector_from_json(json1)
+
+    # Check if both vectors are not None
+    assert a is not None, "Vector a is None"
+    assert b is not None, "Vector b is None"
+
+    # Check if both vectors have the same length
+    assert len(a) == len(b), "Vectors a and b have different lengths"
+
+    # Check if the vectors have different values
+    assert a != b, "Vectors a and b have the same values"
+
+    # Check if a and c vectors are the same
+    assert a == c, "Vectors a and c are different"
+
+    print("PASS: Vectors are valid, same length, and different.")
+
 
 wines2_getAllUniqueTerms_and_check_embeddings()
+calculate_vector_from_json_test()

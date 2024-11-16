@@ -154,7 +154,7 @@ if __name__ == "__main__":
     start_time = time.time()
     xyz = XYZ()
     xyz.get_wines()
-    xyz.save_embeddings_to_db()
+    xyz.save_embeddings_to_db()     
     xyz.save_combined_vectors_to_db()
     end_time = time.time()
     elapsed_time = end_time - start_time
