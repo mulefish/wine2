@@ -1,3 +1,6 @@
+# repo
+https://github.com/mulefish/wine2
+
 # wine2
 A wine store! Python + React + Word2Vec + Pandas + GloVe : Oh! The buzzwords! So 2024.  
 

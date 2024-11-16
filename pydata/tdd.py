@@ -1,6 +1,6 @@
 import psycopg2
 from db_config import db_config
-from db import calculate_vector_from_json
+from db import calculate_vector_from_json, find_closest_wines
 
 def wines2_getAllUniqueTerms_and_check_embeddings():
     # The unique number of dimensions in the wines2 table ought to match the number of embedded words in token_embeddings. 
@@ -82,5 +82,16 @@ def calculate_vector_from_json_test():
     print("PASS: Vectors are valid, same length, and different.")
 
 
+def find_closest_wines_test():
+    json = {
+        "key_does_not_matter": "herbaceous"
+    }
+
+    vector = calculate_vector_from_json(json)
+    found_wines = find_closest_wines(vector)
+    print(found_wines)
+
+
 wines2_getAllUniqueTerms_and_check_embeddings()
 calculate_vector_from_json_test()
+find_closest_wines_test() 

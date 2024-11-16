@@ -14,6 +14,43 @@
 # }
 import psycopg2
 from db_config import db_config
+import numpy as np
+from scipy.spatial.distance import cosine
+
+def find_closest_wines(vector, top_n=5):
+    """
+    Find the closest wines to the given vector using cosine similarity.
+
+    Args:
+        vector (list): The input vector to compare.
+        top_n (int): Number of closest wines to return.
+
+    Returns:
+        list: A list of dictionaries containing the wine ID and similarity score.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Fetch all wine IDs and their combined vectors
+        cursor.execute("SELECT wine_id, combined_vector FROM combined_embeddings;")
+        wines = cursor.fetchall()
+
+        # Calculate similarity for each wine
+        similarities = []
+        for wine_id, wine_vector in wines:
+            similarity = 1 - cosine(vector, wine_vector)  # Cosine similarity (higher is closer)
+            similarities.append({"wine_id": wine_id, "similarity": similarity})
+
+        # Sort by similarity in descending order and get the top N
+        closest_wines = sorted(similarities, key=lambda x: x["similarity"], reverse=True)[:top_n]
+        return closest_wines
+    except Exception as e:
+        print(f"Error finding closest wines: {e}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+
 
 def get_db_connection():
     """Establish and return a new database connection."""
