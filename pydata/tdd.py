@@ -1,6 +1,6 @@
 import psycopg2
 from db_config import db_config
-from db import calculate_vector_from_json, find_closest_wines
+from db import calculate_vector_from_json, find_closest_wines, get_a_wine_for_a_test
 
 def wines2_getAllUniqueTerms_and_check_embeddings():
     # The unique number of dimensions in the wines2 table ought to match the number of embedded words in token_embeddings. 
@@ -82,16 +82,32 @@ def calculate_vector_from_json_test():
     print("PASS: Vectors are valid, same length, and different.")
 
 
-def find_closest_wines_test():
+def find_closest_wines_with_weak_information_test():
     json = {
         "key_does_not_matter": "herbaceous"
     }
 
     vector = calculate_vector_from_json(json)
-    found_wines = find_closest_wines(vector)
-    print(found_wines)
+    found_wines = find_closest_wines(vector, 3)
+    # print(found_wines)
+    for thing in found_wines:
+        print(thing)
 
+def find_closest_wines_with_exact_information_test():
+    """
+    Test to ensure that the closest wine found matches the exact wine used to create the vector
+    and that the similarity score is greater than 0.99.
+    """
+    json = get_a_wine_for_a_test()     
+    vector = calculate_vector_from_json(json)
+    found_wines = find_closest_wines(vector, 3)
+    top = found_wines[0]    
+    assert top["wine_name"] == json["name"], f"Expected wine_name '{json['name']}' but got '{top['wine_name']}'"
+    assert top["similarity"] > 0.99, f"Expected similarity > 0.99 but got {top['similarity']:.4f}"
+
+    print(f"PASS: {top["wine_name"]} similar {top["similarity"]}")
 
 wines2_getAllUniqueTerms_and_check_embeddings()
 calculate_vector_from_json_test()
-find_closest_wines_test() 
+find_closest_wines_with_weak_information_test() 
+find_closest_wines_with_exact_information_test()

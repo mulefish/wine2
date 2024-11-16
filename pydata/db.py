@@ -132,3 +132,34 @@ def calculate_vector_from_json(data):
     finally:
         cursor.close()
         conn.close()
+
+
+def get_a_wine_for_a_test():
+
+    """
+    This is JUST for a test in tdd.py. It will get some wine. Which one does not matter.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Fetch a single record from wines2
+        cursor.execute("SELECT name, type, variety, region, topnote, bottomnote FROM wines2 LIMIT 1;")
+        record = cursor.fetchone()
+
+        name, wine_type, variety, region, topnote, bottomnote = record
+        json = {
+            "name": name,
+            "type": wine_type,
+            "variety": variety,
+            "region": region,
+            "topnote": topnote,
+            "bottomnote": bottomnote
+        }
+        return json
+    except Exception as e:
+        print(f"Error creating vector: {e}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
