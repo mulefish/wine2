@@ -1,6 +1,6 @@
-from flask import Flask, jsonify, render_template_string
+from flask import Flask, request, jsonify, render_template_string
 from flask_cors import CORS
-from db import get_all_wines, get_unique_wines_data
+from db import get_all_wines, get_unique_wines_data, calculate_vector_from_json, find_closest_wines
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -40,6 +40,23 @@ def unique_wines():
         unique_data = get_unique_wines_data()
         return jsonify(unique_data), 200
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/get_closest_wines', methods=['POST'])
+def get_closest_wines():
+    try:
+        opinions = request.get_json()
+        if not opinions:    
+            return jsonify({"error": "Invalid JSON payload"}), 400
+
+        vector = calculate_vector_from_json(opinions)
+        found_wines = find_closest_wines(vector, 20)
+
+        # Return the results as JSON
+        return jsonify({"status": "success", "data": found_wines}), 200
+
+    except Exception as e:
+        # Handle unexpected errors
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':

@@ -107,7 +107,9 @@ def find_closest_wines_with_exact_information_test():
 
     print(f"PASS: {top["wine_name"]} similar {top["similarity"]}")
 
-wines2_getAllUniqueTerms_and_check_embeddings()
-calculate_vector_from_json_test()
-find_closest_wines_with_weak_information_test() 
-find_closest_wines_with_exact_information_test()
+
+if __name__ == '__main__':
+    wines2_getAllUniqueTerms_and_check_embeddings()
+    calculate_vector_from_json_test()
+    find_closest_wines_with_weak_information_test() 
+    find_closest_wines_with_exact_information_test()
