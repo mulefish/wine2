@@ -1,8 +1,13 @@
 """
-This script defines a class `XYZ` that processes wine-related data and extracts GloVe embeddings 
-for terms found in specific columns of the `wines2` table in a PostgreSQL database. 
-It drops the 'token_embeddings' table if it exists, recreates it, and saves the embeddings into the database.
-The script also prints out terms that are not found in the GloVe embeddings.
+This script defines a class `XYZ` that processes wine-related data from a PostgreSQL database
+and utilizes GloVe embeddings for terms found in specific columns of the `wines2` table.
+The script performs the following tasks:
+1. Loads GloVe embeddings from a file.
+2. Extracts unique terms from the `type`, `variety`, `region`, `topnote`, and `bottomnote` columns.
+3. Matches these terms with GloVe embeddings and stores them in the database.
+4. Creates a new table (`combined_embeddings`) that references the `wines2` table and stores
+   a combined vector for each wine entry, computed as the average of its embedded terms.
+5. Prints terms not found in the GloVe embeddings and logs execution time.
 """
 
 import psycopg2
@@ -29,19 +34,17 @@ class XYZ:
         try:
             connection = psycopg2.connect(**db_config)
             cursor = connection.cursor()
-            query = """SELECT type, variety, region, topnote, bottomnote FROM wines2;"""
+            query = """SELECT id, type, variety, region, topnote, bottomnote FROM wines2;"""
             cursor.execute(query)
-
-            for row in cursor.fetchall():
-                type_, variety, region, top_note, bottom_note = row
+            self.wines = cursor.fetchall()
+            for row in self.wines:
+                _, type_, variety, region, top_note, bottom_note = row
                 self.type_set.add(type_)
                 self.variety_set.add(variety)
                 self.region_set.add(region)
                 self.top_note_set.add(top_note)
                 self.bottom_note_set.add(bottom_note)
-
             self.extract_selected_embeddings()
-
         except psycopg2.Error as e:
             print(f"Database error: {e}")
         except Exception as e:
@@ -85,28 +88,58 @@ class XYZ:
         try:
             connection = psycopg2.connect(**db_config)
             cursor = connection.cursor()
-
-            # Drop the table if it exists
             cursor.execute("DROP TABLE IF EXISTS token_embeddings;")
-            
-            # Create the table
             cursor.execute("""
                 CREATE TABLE token_embeddings (
                     token TEXT PRIMARY KEY,
-                    vector FLOAT8[]
+                    vector DOUBLE PRECISION[]
                 );
             """)
-
-            # Insert embeddings
             for token, vector in self.selected_embeddings.items():
                 cursor.execute("""
                     INSERT INTO token_embeddings (token, vector)
                     VALUES (%s, %s)
                     ON CONFLICT (token) DO NOTHING;
                 """, (token, vector.tolist()))
-
             connection.commit()
             print("Table dropped, recreated, and embeddings saved to the database successfully.")
+        except psycopg2.Error as e:
+            print(f"Database error: {e}")
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            if connection:
+                cursor.close()
+                connection.close()
+
+    def save_combined_vectors_to_db(self):
+        try:
+            connection = psycopg2.connect(**db_config)
+            cursor = connection.cursor()
+            cursor.execute("DROP TABLE IF EXISTS combined_embeddings;")
+            cursor.execute("""
+                CREATE TABLE combined_embeddings (
+                    wine_id INT PRIMARY KEY REFERENCES wines2(id) ON DELETE CASCADE,
+                    combined_vector DOUBLE PRECISION[]
+                );
+            """)
+            for row in self.wines:
+                wine_id, type_, variety, region, top_note, bottom_note = row
+                combined_vector = np.zeros(50)
+                term_count = 0
+                for term in [type_, variety, region, top_note, bottom_note]:
+                    vector = self.word_embeddings.get(term.lower())
+                    if vector is not None:
+                        combined_vector += vector
+                        term_count += 1
+                if term_count > 0:
+                    combined_vector /= term_count
+                    cursor.execute("""
+                        INSERT INTO combined_embeddings (wine_id, combined_vector)
+                        VALUES (%s, %s);
+                    """, (wine_id, combined_vector.tolist()))
+            connection.commit()
+            print("Combined vectors saved to the database successfully.")
         except psycopg2.Error as e:
             print(f"Database error: {e}")
         except Exception as e:
@@ -122,6 +155,7 @@ if __name__ == "__main__":
     xyz = XYZ()
     xyz.get_wines()
     xyz.save_embeddings_to_db()
+    xyz.save_combined_vectors_to_db()
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Execution time: {elapsed_time:.2f} seconds")
