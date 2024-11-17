@@ -7,10 +7,11 @@ headers = {
 def get_closest_wines():
     url = "http://127.0.0.1:5000/get_closest_wines"
     payload = {
-        "region": "champagne",
-        "topnote": "herbaceous",
-        "variety": "cabernet",
-        "bottomnote": "herbaceous"
+        "selections": {
+            "variety": "cabernet",
+            "topnote": "smooth"
+        },
+        "number": 3
     }
 
     try:
@@ -22,6 +23,7 @@ def get_closest_wines():
 
         results = response.json()
         top = results["data"][0]
+        print(results)
         print(f"PASS: get_closest_wines {top["wine_name"]} {top["similarity"]}" )
 
     except Exception as e:
