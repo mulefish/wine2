@@ -1,5 +1,5 @@
 """
-This script defines a class `XYZ` that processes wine-related data from a PostgreSQL database
+This script defines a class `VectorizeTheWines` that processes wine-related data from a PostgreSQL database
 and utilizes GloVe embeddings for terms found in specific columns of the `wines2` table.
 The script performs the following tasks:
 1. Loads GloVe embeddings from a file.
@@ -16,7 +16,7 @@ from db_config import db_config
 import time
 
 
-class XYZ:
+class VectorizeTheWines:
     def __init__(self):
         self.PATH = r"C:\\Users\\squar\\jars\\glove.6B\\glove.6B.50d.txt"
         self.wines = []
@@ -152,10 +152,10 @@ class XYZ:
 
 if __name__ == "__main__":
     start_time = time.time()
-    xyz = XYZ()
-    xyz.get_wines()
-    xyz.save_embeddings_to_db()     
-    xyz.save_combined_vectors_to_db()
+    vtw = VectorizeTheWines()
+    vtw.get_wines()
+    vtw.save_embeddings_to_db()     
+    vtw.save_combined_vectors_to_db()
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Execution time: {elapsed_time:.2f} seconds")
